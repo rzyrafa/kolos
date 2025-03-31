@@ -1,46 +1,61 @@
 import json
 import pandas as pd
 import random
+import uuid
+import os
 
-with open("baza.json",encoding="UTF-8") as baza:
-    baza_slownik = json.load(baza)
+def generatorbazy(ilezadan=4):
+    komorki = []
+    dane = {'nbformat': 4,
+             'nbformat_minor': 0,
+               'metadata': {'colab': {'provenance': []},
+                'kernelspec': {'name': 'python3',
+                'display_name': 'Python 3'},
+                'language_info': {'name': 'python'}},
+                'cells':komorki}
+    for i in range(1,ilezadan+1):
+        komorki.append({"cell_type":"markdown","source":[f"Zadanie {i}"],"metadata":{"id":str(uuid.uuid4())}})
+        komorki.append({"cell_type":"markdown","source":["------"],"metadata":{"id":str(uuid.uuid4())}})
+        komorki.append({"cell_type":"code","source":[],"metadata":{"id":str(uuid.uuid4())},"execution_count":0,"outputs":[]})
+    with open("baza.json","w",encoding="UTF-8") as bazav2:
+        json.dump(dane,bazav2,ensure_ascii="false",indent=4)
+    return f"Baza Utworzona z {ilezadan} zadaniami."
 
-dane = pd.read_excel("dane.xlsx",sheet_name="Arkusz1")
+def genkolos(ile,zlisty = False,kolosilezadan=4):
+    generatorbazy(kolosilezadan)
+    with open("baza.json",encoding="UTF-8") as baza:
+        baza_slownik = json.load(baza)
 
-lista_zadan = list(range(1,9))
-grupy = []
-uczniownie = []
-zadania = []
-for i in range(0,89):
-    uczniownie.append(dane.iloc[i,9])
-    grupy.append(random.randint(1,2))
-    zadania.append(random.sample(lista_zadan,4))
+    dane = pd.read_excel("dane.xlsx",sheet_name="Arkusz1")
 
-lista = dict(zip(uczniownie, zip(grupy,zadania)))
-print(lista)
+    lista_zadan = list(range(1,9))
+    grupy = []
+    if zlisty == True:
+        with open("lista.txt",encoding="UTF-8") as plikuczniowie:
+            uczniownie = plikuczniowie.readlines()
+        uczniownie = [v.rstrip("\n") for v in uczniownie]
+    else:
+        uczniownie = range(ile)
+    
+    zadania = []
+    for i in range(0,len(uczniownie)):
+        grupy.append(random.randint(1,2))
+        zadania.append(random.sample(lista_zadan,kolosilezadan))
 
-ile = input("Ile Chcesz Wygenerować testów? = ")
+    lista = dict(zip(uczniownie, zip(grupy,zadania)))
+    print(lista)
 
-for i,(k,w) in enumerate(lista.items()):
-    grupa = int(w[0])-1
-    zad1 = w[1][0]
-    zad2 = w[1][1]
-    zad3 = w[1][2]
-    zad4 = w[1][3]
-    baza_slownik["cells"][2]["source"] = str(dane.iloc[grupa,zad1]).split("\n")
-    baza_slownik["cells"][5]["source"] = str(dane.iloc[grupa,zad2]).split("\n")
-    baza_slownik["cells"][8]["source"] = str(dane.iloc[grupa,zad3]).split("\n")
-    baza_slownik["cells"][11]["source"] = str(dane.iloc[grupa,zad4]).split("\n")
-    with open(f"{k}.ipynb","w") as test:
-        json.dump(baza_slownik,test,ensure_ascii="false",indent=4)
-    if i == (int(ile)-1):
-        break
+    for i,(k,w) in enumerate(lista.items()):
+        grupa = int(w[0])-1
+        iterator = 0
+        for zad in range(1,3*kolosilezadan+1,3):
+            baza_slownik["cells"][zad]["source"] = str(dane.iloc[grupa,w[1][iterator]]).split("\n")
+            iterator += 1
+        with open(f"testy/{k}.ipynb","w") as test:
+            json.dump(baza_slownik,test,ensure_ascii="false",indent=4)
+        if i == (int(ile)-1):
+            break
+    os.remove("baza.json")
+    return f"Pomyślnie wygenerowano {ile} testów."
 
-#zrobnie kolosow nie z listy
-#baza.json ma sie robic z excela
-#optymalizcja kodu
-#pasek ładowania
-#opcja usuwania pozostalosci
-#zrobic z tego funkcje
-#zrobic to uniwersalne
-#zeby lista nie byla excel tylko w parametrach funkcji
+print(genkolos(2,False,5)) #ile kolosow #czy ma sie generowac z listy #ile zadan ma byc na kolosie
